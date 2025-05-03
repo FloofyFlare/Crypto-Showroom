@@ -1,0 +1,3 @@
+•	A public-key conversation: Implement a secure messaging environment via public-key encryption and digital signatures. Allow the user to clearly see the conversation from both sides of the aisle.
+o	Users will be put into a conversation channel with “Rose” a person who is looking for a new house in today’s market. Using a dropdown list of responses, they will be able to hold a conversation over this secure channel all while seeing the crypto behind the conversation.
+o	Presented with a query from Rose, the user will first receive the hashed message and then via an input command they will decrypt the message and verify the sender as Rose. This process continues from each message received in the conversation

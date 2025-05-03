@@ -1,6 +1,22 @@
 import numpy as np
 import re
 import os
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+import hashlib
+import sympy
+import random
+
+def get_random_prime(start, end):
+    primes = list(sympy.primerange(start, end))
+    return random.choice(primes)
+
+def power(a, b, p):
+    if b == 1:
+        return a
+    else:
+        return pow(a, b) % p
+  # Got implementation from geeksforgeeks
 
 def bxor_numpy(b1, b2):
     n_b1 = np.frombuffer(b1, dtype='uint8')
@@ -19,7 +35,6 @@ def validmsg() -> str:
         "to encode \n message: ")
         userinput = userinput.replace(" ","")
         userinput = userinput.lower()
-        print(userinput)
         if is_alpha(userinput):
           break
         print("Your message does not follow the [a-zA-Z] set")
@@ -69,7 +84,7 @@ def classical():
     case _:
       classical()
 
-def oneTime():
+def one_time():
   print("\n#############################################")
   userinput = input("Provide a message of your choice to encrypt \n" \
   "enter here: ")
@@ -83,6 +98,85 @@ def oneTime():
   print(f"Your ciphertext XOR key = {decoded_ciphertext}")
   print("Do the same vulnerabilities in Vegengère exist here? (Anwser no)")
 
+def numeric_key() -> int:
+  userinput = ""
+  while True:
+        userinput = input("Provide a provide a numeric (int) for you private key" \
+        " to encode messages: ")
+        userinput = userinput.replace(" ","")
+        if userinput.isnumeric():
+          break
+        print("Your provided private key is not an integer!")
+        
+  return int(userinput)
+
+def get_key_from_secret(secret):
+    return hashlib.sha256(str(secret).encode()).digest()
+
+def yes_or_no():
+  while True:
+        userinput = input("Respond y or n:")
+        userinput = userinput.replace(" ","")
+        userinput = userinput.lower()
+        if userinput[0] == "y":
+           return True
+        if userinput[0] == "n":
+           return False
+        print("Your message does not follow yes or no (y/n)format")
+
+def secure_convo():
+  #Using Diffie Hellman
+  # Example usage
+  print("#############################################")
+  print("Diffie Hellman with Rose for verification")
+  pubprime = get_random_prime(10, 200)
+  pubroot = np.random.randint(1,400)
+  input(f"The public key you and Rose decided was prime number {pubprime} and primitive root {pubroot} \n"\
+         "press enter to continue")
+  userpriv = numeric_key()
+  x = power(pubroot, userpriv, pubprime)
+  rosepriv = np.random.randint(1,400)
+  y = power(pubroot, rosepriv, pubprime)
+  usersk = power(y,userpriv,pubprime)
+  rosesk = power(x,rosepriv,pubprime)
+  print("You recieved the shared secret key:", usersk)
+  print("#############################################")
+  print("As a real estate agent your in a chat with Rose a prospective home owner")
+  key = get_key_from_secret(rosesk)
+  cipher = AES.new(key, AES.MODE_CBC)  # Initialize AES in CBC mode
+  iv = cipher.iv
+  rosemsg = "Hello i'm looking for a house is the house in CA avaliable?"
+  encrypted_msg = cipher.encrypt(pad(rosemsg.encode(), AES.block_size))
+  print(f"Rose: {encrypted_msg.hex()}")
+  input("decript?")
+  key = get_key_from_secret(usersk)
+  decipher = AES.new(key, AES.MODE_CBC, iv=iv)
+  decrypted_msg = unpad(decipher.decrypt(encrypted_msg), AES.block_size).decode()
+  print(f"Rose: {decrypted_msg}")
+  if yes_or_no :
+    rosemsg = "Great! lets get on a call and talk more about it"
+    encrypted_msg = cipher.encrypt(pad(rosemsg.encode(), AES.block_size))
+    print(f"Rose: {encrypted_msg.hex()}")
+    input("decript?")
+    key = get_key_from_secret(usersk)
+    decipher = AES.new(key, AES.MODE_CBC, iv=iv)
+    decrypted_msg = unpad(decipher.decrypt(encrypted_msg), AES.block_size).decode()
+    print(f"Rose: {decrypted_msg}")
+  else:
+    rosemsg = "Ok thanks, let me konw if anything changes"
+    encrypted_msg = cipher.encrypt(pad(rosemsg.encode(), AES.block_size))
+    print(f"Rose: {encrypted_msg.hex()}")
+    input("decript?")
+    key = get_key_from_secret(usersk)
+    decipher = AES.new(key, AES.MODE_CBC, iv=iv)
+    decrypted_msg = unpad(decipher.decrypt(encrypted_msg), AES.block_size).decode()
+    print(f"Rose: {decrypted_msg}")
+
+  
+
+
+
+
 def cryptoShowroom():
   print("Would you like to try: \n" \
   "   classical ciphers(1)\n" \
@@ -93,9 +187,9 @@ def cryptoShowroom():
     case "1":
       classical()
     case "2":
-      oneTime()
+      one_time()
     case "3":
-      print("You can become a backend developer")
+      secure_convo()
     case _:
       cryptoShowroom()
 
