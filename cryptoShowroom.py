@@ -90,18 +90,31 @@ def one_time():
   "enter here: ")
   key = os.urandom(len(userinput))
   print(f"KEY: {key}")
-  print(f"your message '{userinput}' encrypted is")
+  print(f"your message '{userinput}' encrypted by one-time pad is")
   ciphertext = bxor_numpy(bytes(userinput, 'utf-8'),key)
-  print(f"your message XOR key = {ciphertext}")
+  print(f"{ciphertext}")
   input("Press enter to decrypt")
   decoded_ciphertext = str(bxor_numpy(ciphertext,key))
-  print(f"Your ciphertext XOR key = {decoded_ciphertext}")
-  print("Do the same vulnerabilities in Vegengère exist here? (Anwser no)")
+  print(f"{decoded_ciphertext}")
+  print("Do the same vulnerabilities in Vigenère exist here? (Anwser no)")
+
+# I did some research on how to make good encryption functions with PyCryptodome via AI
+# just to keep transparency since I've never worked with this libary before
+def encrypt_message(message, key):
+    cipher = AES.new(key, AES.MODE_CBC)
+    iv = cipher.iv  # Store the IV
+    encrypted = cipher.encrypt(pad(message.encode(), AES.block_size))
+    return iv, encrypted  # Return both IV & encrypted data
+
+def decrypt_message(encrypted, key, iv):
+    decipher = AES.new(key, AES.MODE_CBC, iv=iv)
+    decrypted = unpad(decipher.decrypt(encrypted), AES.block_size).decode()
+    return decrypted
 
 def numeric_key() -> int:
   userinput = ""
   while True:
-        userinput = input("Provide a provide a numeric (int) for you private key" \
+        userinput = input("Provide a provide a numeric (int) as your private key" \
         " to encode messages: ")
         userinput = userinput.replace(" ","")
         if userinput.isnumeric():
@@ -115,14 +128,14 @@ def get_key_from_secret(secret):
 
 def yes_or_no():
   while True:
-        userinput = input("Respond y or n:")
+        userinput = input("Whats your reponse?\n 1) yes its still avaliable \n 2) no its not avaliable \n:")
         userinput = userinput.replace(" ","")
         userinput = userinput.lower()
-        if userinput[0] == "y":
-           return True
-        if userinput[0] == "n":
-           return False
-        print("Your message does not follow yes or no (y/n)format")
+        if userinput[0] == "1":
+           return (True, "yes its still avaliable")
+        if userinput[0] == "2":
+           return (False, "no its not avaliable")
+        print("Your message does not follow yes or no (y/n) format")
 
 def secure_convo():
   #Using Diffie Hellman
@@ -131,46 +144,43 @@ def secure_convo():
   print("Diffie Hellman with Rose for verification")
   pubprime = get_random_prime(10, 200)
   pubroot = np.random.randint(1,400)
-  input(f"The public key you and Rose decided was prime number {pubprime} and primitive root {pubroot} \n"\
-         "press enter to continue")
+  print(f"The public key you and Rose decided was prime number {pubprime} and primitive root {pubroot}")
   userpriv = numeric_key()
   x = power(pubroot, userpriv, pubprime)
   rosepriv = np.random.randint(1,400)
   y = power(pubroot, rosepriv, pubprime)
   usersk = power(y,userpriv,pubprime)
   rosesk = power(x,rosepriv,pubprime)
+  print(usersk,rosesk)
   print("You recieved the shared secret key:", usersk)
   print("#############################################")
-  print("As a real estate agent your in a chat with Rose a prospective home owner")
+  print("Senario: As a real estate owner you're in a chat with Rose a prospective home buyer")
   key = get_key_from_secret(rosesk)
-  cipher = AES.new(key, AES.MODE_CBC)  # Initialize AES in CBC mode
-  iv = cipher.iv
   rosemsg = "Hello i'm looking for a house is the house in CA avaliable?"
-  encrypted_msg = cipher.encrypt(pad(rosemsg.encode(), AES.block_size))
-  print(f"Rose: {encrypted_msg.hex()}")
-  input("decript?")
-  key = get_key_from_secret(usersk)
-  decipher = AES.new(key, AES.MODE_CBC, iv=iv)
-  decrypted_msg = unpad(decipher.decrypt(encrypted_msg), AES.block_size).decode()
-  print(f"Rose: {decrypted_msg}")
-  if yes_or_no :
-    rosemsg = "Great! lets get on a call and talk more about it"
-    encrypted_msg = cipher.encrypt(pad(rosemsg.encode(), AES.block_size))
-    print(f"Rose: {encrypted_msg.hex()}")
-    input("decript?")
-    key = get_key_from_secret(usersk)
-    decipher = AES.new(key, AES.MODE_CBC, iv=iv)
-    decrypted_msg = unpad(decipher.decrypt(encrypted_msg), AES.block_size).decode()
-    print(f"Rose: {decrypted_msg}")
+  iv1, encrypted1 = encrypt_message(rosemsg, key)
+  print(f"Rose: {encrypted1.hex()}")
+  input("press enter to decrypt the message with the shared key")
+  decrypted1 = decrypt_message(encrypted1, key, iv1)
+  print(f"Rose: {decrypted1}\n")
+  w,s = yes_or_no()
+  if w:
+    ivy, yourenc = encrypt_message(s, key)
+    print(f"Your response encrypted: {yourenc}\n")
+    rosemsg2 = "Great! lets get on a call and talk more about it"
+    iv2, encrypted2 = encrypt_message(rosemsg2, key)
+    print(f"Rose: {encrypted2.hex()}")
+    input("press enter to decrypt Rose's response with the shared key")
+    decrypted2 = decrypt_message(encrypted2, key, iv2)
+    print(f"Rose: {decrypted2}")
   else:
-    rosemsg = "Ok thanks, let me konw if anything changes"
-    encrypted_msg = cipher.encrypt(pad(rosemsg.encode(), AES.block_size))
-    print(f"Rose: {encrypted_msg.hex()}")
-    input("decript?")
-    key = get_key_from_secret(usersk)
-    decipher = AES.new(key, AES.MODE_CBC, iv=iv)
-    decrypted_msg = unpad(decipher.decrypt(encrypted_msg), AES.block_size).decode()
-    print(f"Rose: {decrypted_msg}")
+    ivy, yourenc = encrypt_message(s, key)
+    print(f"Your response encrypted: {yourenc}\n")
+    rosemsg2 = "Ok thanks, let me know if anything changes"
+    iv2, encrypted2 = encrypt_message(rosemsg2, key)
+    print(f"Rose: {encrypted2.hex()}")
+    input("press enter to decrypt Rose's response with the shared key")
+    decrypted2 = decrypt_message(encrypted2, key, iv2)
+    print(f"Rose: {decrypted2}")
 
   
 
